@@ -4,7 +4,7 @@
 
 #define NUMBER_OF_LINE 10
 
-void* print_lines(void* args);
+void* print_lines(void* argv);
 
 int main()
 {
@@ -29,15 +29,15 @@ int main()
 	return EXIT_SUCCESS;
 }
 
-void* print_lines(void* args)
+void* print_lines(void* argv)
 {
-	if (NULL == args)
+	if (NULL == argv)
 	{
 		fprintf(stderr, "Wrong arguments for 'print_lines()'\n");
 		exit(EXIT_FAILURE);
 	}
 
-	const char* const line_to_print = (const char* const) args;
+	const char* const line_to_print = (const char* const) argv;
 
 	for (int i = 0; i < NUMBER_OF_LINE; ++i)
 	{
