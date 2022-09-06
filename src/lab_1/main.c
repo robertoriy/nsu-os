@@ -18,10 +18,10 @@ int main()
 		return EXIT_FAILURE;
 	}
 	
-	print_lines(void*)PARENT_TEXT);
+	print_lines((void*)PARENT_TEXT);
 	
 	pthread_exit(NULL);
-	
+
 	return EXIT_SUCCESS;
 }
 
