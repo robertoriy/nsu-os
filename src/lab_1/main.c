@@ -8,11 +8,11 @@ void* print_lines(void* argv);
 
 int main()
 {
-	pthread_t thread;
+	pthread_t child_thread;
 	const char* const PARENT_TEXT = "parent";
 	const char* const CHILD_TEXT = "child";
 	
-	if (0 != pthread_create(&thread, NULL, print_lines, (void*)CHILD_TEXT))
+	if (0 != pthread_create(&child_thread, NULL, print_lines, (void*)CHILD_TEXT))
 	{
 		perror("Failed to create a thread");
 		return EXIT_FAILURE;
@@ -42,4 +42,3 @@ void* print_lines(void* argv)
 
 	return NULL;
 }
-
