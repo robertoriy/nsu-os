@@ -19,7 +19,7 @@ int main()
 		perror("Failed to create a thread");
 		return EXIT_FAILURE;
 	}
-	
+
 	sleep(TIME_TO_SLEEP);
 
 	if (0 != pthread_cancel(child_thread))
@@ -42,10 +42,14 @@ void* print_lines(void* argv)
 	}
 
 	const char* const line_to_print = (const char* const) argv;
+	time_t now;
+	struct tm *sp;
 
 	for (int i = 0; i < NUMBER_OF_LINE; ++i)
 	{
-		printf("Written by %s - %d\n", line_to_print, i);
+		(void) time(&now);
+		sp = localtime(&now);
+		printf("Written by %s - %d\n", line_to_print, sp->tm_sec);
 	}
 
 	return NULL;
