@@ -43,13 +43,13 @@ void* print_lines(void* argv)
 
 	const char* const line_to_print = (const char* const) argv;
 	time_t now;
-	struct tm* sp;
+	struct tm* time_attr;
 
 	for (int i = 0; i < NUMBER_OF_LINE; ++i)
 	{
-		(void) time(&now);
-		sp = localtime(&now);
-		printf("Written by %s - %d\n", line_to_print, sp->tm_sec);
+		time(&now);
+		time_attr = localtime(&now);
+		printf("Written by %s - %d\n", line_to_print, time_attr->tm_sec);
 	}
 
 	return NULL;
