@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#define NUMBER_OF_LINE 100000
 #define TIME_TO_SLEEP 2
 #define CLEANUP_POP_ARG 1
 
