@@ -43,7 +43,7 @@ void* print_lines(void* argv)
 
 	const char* const line_to_print = (const char* const) argv;
 	time_t now;
-	struct tm *sp;
+	struct tm* sp;
 
 	for (int i = 0; i < NUMBER_OF_LINE; ++i)
 	{

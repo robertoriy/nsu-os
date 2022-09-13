@@ -3,13 +3,13 @@
 #include <pthread.h>
 
 #define NUMBER_OF_THREADS 4
-#define NUMBER_OF_LINE 17
+#define NUMBER_OF_LINE 2
 
 void* print_lines(void* argv);
 
 int main()
 {
-	pthread_t pthread_array[NUMBER_OF_THREADS];
+	pthread_t pthreads[NUMBER_OF_THREADS];
 
     const char* const TEXT[NUMBER_OF_THREADS] = { 
                         "first thread",
@@ -20,7 +20,7 @@ int main()
 
     for (int i = 0; i < NUMBER_OF_THREADS; ++i)
     {
-        if (0 != pthread_create(&pthread_array[i], NULL, print_lines, (void*)TEXT[i]))
+        if (0 != pthread_create(&pthreads[i], NULL, print_lines, (void*)TEXT[i]))
         {
             perror("Failed to create a thread");
             exit(EXIT_FAILURE);
@@ -29,7 +29,7 @@ int main()
 
     for (int i = 0; i < NUMBER_OF_THREADS; ++i)
     {
-        if (0 != pthread_join(pthread_array[i], NULL))
+        if (0 != pthread_join(pthreads[i], NULL))
         {
             perror("Failed to join the thread");
             exit(EXIT_FAILURE);
