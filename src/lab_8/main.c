@@ -63,6 +63,7 @@ int main(int argc, char** argv)
         if (0 != pthread_create(&pthreads[i], NULL, pi_counter, (void*) &displacements[i]))
         {
             perror("Failed to create a thread");
+            fprintf(stderr, "Number of steps less than required\n");
             break;
         }
         ++ACTUAL_NUMBER_OF_THREADS;
