@@ -45,19 +45,6 @@ int main(int argc, char** argv)
 
     fill_displacements_data(EXPECTED_NUMBER_OF_THREADS, displacements);
 
-    // int all_steps = 0;
-    // for (int i = 0; i < EXPECTED_NUMBER_OF_THREADS; ++i)
-    // {
-    //     printf("\nstart[%d] == %lld \n", i, displacements[i].start);
-    //     printf("end[%d] == %lld \n", i, displacements[i].start + displacements[i].number_of_iterations);
-    //     all_steps += displacements[i].number_of_iterations;
-    // }
-
-    // if (NUMBER_OF_STEPS == all_steps)
-    // {
-    //     printf("correct steps\n");
-    // }
-
     for (int i = 0; i < EXPECTED_NUMBER_OF_THREADS; ++i)
     {
         if (0 != pthread_create(&pthreads[i], NULL, pi_counter, (void*) &displacements[i]))
