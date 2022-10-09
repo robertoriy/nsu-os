@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 
     for (int i = 0; i < EXPECTED_NUMBER_OF_THREADS; ++i)
     {
-        if (0 != pthread_create(&pthreads[i], NULL, print_lines, (void*) &in_data[i]))
+        if (EXIT_SUCCESS != pthread_create(&pthreads[i], NULL, print_lines, (void*) &in_data[i]))
         {
             perror("Failed to create a thread");
             fprintf(stderr, "Number of strings less than required\n");
@@ -46,7 +46,7 @@ int main(int argc, char** argv)
     for (int i = 0; i < ACTUAL_NUMBER_OF_THREADS; ++i)
     {
         int* return_value;
-        if (0 != pthread_join(pthreads[i], (void**) &return_value))
+        if (EXIT_SUCCESS != pthread_join(pthreads[i], (void**) &return_value))
         {
             perror("Failed to join the thread");
             free(pthreads);
