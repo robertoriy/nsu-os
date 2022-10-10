@@ -82,7 +82,7 @@ void* print_lines(void* argv)
 
 int memory_allocation(const int size, pthread_t** pthreads, input_data** array)
 {
-    *pthreads = malloc(sizeof(pthreads) * size);
+    *pthreads = malloc(sizeof(pthread_t) * size);
     if (NULL == *pthreads)
     {
         perror("malloc() failed");
