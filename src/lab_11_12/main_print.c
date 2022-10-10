@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-#define NUMBER_OF_LINE 20
+#define NUMBER_OF_LINE 2
 #define NUMBER_OF_MUTEXES 3
 
 pthread_mutex_t mutexes[NUMBER_OF_MUTEXES];
@@ -52,6 +52,7 @@ int main()
 	{
 		exit(EXIT_FAILURE);
 	}
+    printf("[parent] mutex - %d locked\n", 0);
 	while (!started)
 	{
 		usleep(300);
@@ -63,16 +64,21 @@ int main()
 		{
 			exit(EXIT_FAILURE);
 		}
-		printf("Written by %s - %d\n", PARENT_TEXT, i);
-		if (EXIT_SUCCESS != pthread_mutex_unlock(&mutexes[i % NUMBER_OF_MUTEXES]))
+        printf("[parent] mutex - %d locked\n", (i + 1) % NUMBER_OF_MUTEXES);
+
+		printf("\nWritten by %s - %d\n\n", PARENT_TEXT, i);
+		
+        if (EXIT_SUCCESS != pthread_mutex_unlock(&mutexes[i % NUMBER_OF_MUTEXES]))
 		{
 			exit(EXIT_FAILURE);
 		}
+        printf("[parent] mutex - %d unlocked\n", i % NUMBER_OF_MUTEXES);
 	}
-	if (EXIT_SUCCESS != pthread_mutex_unlock(&mutexes[(NUMBER_OF_LINE) % NUMBER_OF_MUTEXES]))
+	if (EXIT_SUCCESS != pthread_mutex_unlock(&mutexes[NUMBER_OF_LINE % NUMBER_OF_MUTEXES]))
 	{
 		exit(EXIT_FAILURE);
 	}
+    printf("[parent] mutex - %d unlocked\n", NUMBER_OF_LINE % NUMBER_OF_MUTEXES);
 
 	if (EXIT_SUCCESS != pthread_join(child_thread, NULL))
 	{
@@ -101,6 +107,7 @@ void* print_lines(void* argv)
 	{
 		exit(EXIT_FAILURE);
 	}
+    printf("[child] mutex - %d locked\n", NUMBER_OF_MUTEXES - 1);
 	started = true;
 
 	for (int i = 0; i < NUMBER_OF_LINE; ++i)
@@ -109,16 +116,21 @@ void* print_lines(void* argv)
 		{
 			exit(EXIT_FAILURE);
 		}
-		printf("Written by %s - %d\n", line_to_print, i);
+        printf("[child] mutex - %d locked\n", i % NUMBER_OF_MUTEXES);
+
+		printf("\nWritten by %s - %d\n\n", line_to_print, i);
+
 		if (EXIT_SUCCESS != pthread_mutex_unlock(&mutexes[(i + 2) % NUMBER_OF_MUTEXES]))
 		{
 			exit(EXIT_FAILURE);
 		}
+        printf("[child] mutex - %d unlocked\n", (i + 2) % NUMBER_OF_MUTEXES);
 	}
 	if (EXIT_SUCCESS != pthread_mutex_unlock(&mutexes[(NUMBER_OF_LINE - 1) % NUMBER_OF_MUTEXES]))
 	{
 		exit(EXIT_FAILURE);
 	}
+    printf("[child] mutex - %d unlocked\n", (NUMBER_OF_LINE - 1) % NUMBER_OF_MUTEXES);
 
 	return NULL;
 }
