@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     double pi_part = 0;
     for (int i = 0; i < NUMBER_OF_THREADS; ++i)
     {
-        int* thread_returned;
+        void* thread_returned;
         CHECK_FUNCTION(pthread_join(pthreads[i], (void**)&thread_returned), \
         destroy_all_elements(&mutex, pthreads, thread_info); return EXIT_FAILURE);
 
