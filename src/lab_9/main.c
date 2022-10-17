@@ -25,7 +25,7 @@ void count_to_the_end(long long start_multiplier, long long number_of_iterations
 int set_sigint_handler();
 void signal_handler(int signal);
 int memory_allocation(pthread_t** pthreads, thread_data** thread_info);
-void destroy_all_elements(pthread_mutex_t mutex, pthread_t* pthreads, thread_data* thread_info);
+void destroy_all_elements(pthread_mutex_t* mutex, pthread_t* pthreads, thread_data* thread_info);
 
 int main(int argc, char** argv)
 {
@@ -47,31 +47,31 @@ int main(int argc, char** argv)
 
     CHECK_FUNCTION(pthread_mutex_init(&mutex, NULL), free(pthreads); free(thread_info); return EXIT_FAILURE);
 
-    CHECK_FUNCTION(set_sigint_handler(), destroy_all_elements(mutex, pthreads, thread_info); return EXIT_FAILURE);
+    CHECK_FUNCTION(set_sigint_handler(), destroy_all_elements(&mutex, pthreads, thread_info); return EXIT_FAILURE);
 
     for (int i = 0; i < NUMBER_OF_THREADS; ++i)
     {
         thread_info[i].start = i;
 
         CHECK_FUNCTION(pthread_create(&pthreads[i], NULL, pi_counter, (void*) &thread_info[i]), \
-        destroy_all_elements(mutex, pthreads, thread_info); return EXIT_FAILURE);
+        destroy_all_elements(&mutex, pthreads, thread_info); return EXIT_FAILURE);
     }
 
     double pi_part = 0;
-    double* thread_returned;
     for (int i = 0; i < NUMBER_OF_THREADS; ++i)
     {
+        int* thread_returned;
         CHECK_FUNCTION(pthread_join(pthreads[i], (void**)&thread_returned), \
-        destroy_all_elements(mutex, pthreads, thread_info); return EXIT_FAILURE);
+        destroy_all_elements(&mutex, pthreads, thread_info); return EXIT_FAILURE);
 
-        CHECK_THREAD_ARGUMENTS(thread_returned, destroy_all_elements(mutex, pthreads, thread_info); return EXIT_FAILURE);
+        CHECK_THREAD_ARGUMENTS(thread_returned, destroy_all_elements(&mutex, pthreads, thread_info); return EXIT_FAILURE);
 
         pi_part += thread_info[i].local_result;
     }
 
     printf("\n\tPi ~ %.15g\n", pi_part * 4);
 
-    destroy_all_elements(mutex, pthreads, thread_info);
+    destroy_all_elements(&mutex, pthreads, thread_info);
 
     return EXIT_SUCCESS;
 }
@@ -150,9 +150,9 @@ int memory_allocation(pthread_t** pthreads, thread_data** thread_info)
     return EXIT_SUCCESS;
 }
 
-void destroy_all_elements(pthread_mutex_t mutex, pthread_t* pthreads, thread_data* thread_info)
+void destroy_all_elements(pthread_mutex_t* mutex, pthread_t* pthreads, thread_data* thread_info)
 {
-    pthread_mutex_destroy(&mutex);
+    pthread_mutex_destroy(mutex);
     free(pthreads);
     free(thread_info);
 }
