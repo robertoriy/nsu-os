@@ -1,160 +1,186 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdbool.h>
 #include <semaphore.h>
 #include "error_check.h"
 
-#define NUMBER_OF_PHILOSOPHERS 5
-#define DELAY 30000
-#define AMOUNT_OF_FOOD 50
+#define THINKING_TIME 30000
+#define EATING_TIME 50000
+#define AMOUNT_OF_FOOD 1000
 
 #define THINKING 0
 #define HUNGRY 1
 #define EATING 2
 
-int state[NUMBER_OF_PHILOSOPHERS];
-sem_t semaphores[NUMBER_OF_PHILOSOPHERS];
-pthread_mutex_t mutex;
+typedef struct philosopher_data
+{
+    int id;
+    int eated;
+} philosopher_data;
 
-void* philosopher(void* argv);
+int NUMBER_OF_PHILOSOPHERS;
+int *states;
+sem_t* semaphores;
+pthread_mutex_t states_mutex;
+pthread_mutex_t food_mutex;
 
-void think(void);
+void* philosopher_action(void* argv);
+
+bool can_eat(int* eated_value); 
+
+void think(int id);
 void take_forks(int id);
-void eat(void);
+void eat(int id);
 void put_forks(int id);
-void check_forks(int id);
 
-bool can_eat();
+void check_forks(int id);
 int left(int id);
 int right(int id);
 
-void destroy_semaphores();
+int memory_allocation(pthread_t** pthreads, philosopher_data** philosophers);
+void fill_philosopher_info(philosopher_data* philosophers);
+int init_resources();
+void delete_all_resources(pthread_t* pthreads, philosopher_data* philosophers);
+void destroy_sync_obj();
+void free_resources(pthread_t* pthreads, philosopher_data* philosophers);
 
 
 int main (int argc, char **argv)
 {
-    pthread_t philosophers[NUMBER_OF_PHILOSOPHERS];
+    if (2 != argc)
+    {
+        fprintf(stderr, "Expected one argument\n");
+        return EXIT_FAILURE;
+    }
+    NUMBER_OF_PHILOSOPHERS = atoi(argv[1]);
+    if (NUMBER_OF_PHILOSOPHERS < 1)
+    {
+        fprintf(stderr, "Expected value >= 1\n");
+        return EXIT_FAILURE;
+    }
 
-    CHCK_FUNC(pthread_mutex_init (&mutex, NULL), return EXIT_FAILURE);
+    pthread_t* pthreads;
+    philosopher_data* philosophers;
+
+    CHCK_FUNC(memory_allocation(&pthreads, &philosophers), return EXIT_FAILURE);
+
+    fill_philosopher_info(philosophers);
+
+    CHCK_FUNC(init_resources(), free_resources(pthreads, philosophers); exit(EXIT_FAILURE));
 
     for (int i = 0; i < NUMBER_OF_PHILOSOPHERS; i++)
     {
-        CHCK_FUNC(sem_init(&semaphores[i], 0, 0), return EXIT_FAILURE);
+        CHCK_FUNC(pthread_create(&pthreads[i], NULL, philosopher_action, (void*) &philosophers[i]),\
+        delete_all_resources(pthreads, philosophers); exit(EXIT_FAILURE));
     }
 
     for (int i = 0; i < NUMBER_OF_PHILOSOPHERS; i++)
     {
-        CHCK_FUNC(pthread_create(&philosophers[i], NULL, philosopher, (void*)i), \
-        destroy_semaphores(); return EXIT_FAILURE);
+        void* error_check;
+
+        CHCK_FUNC(pthread_join (pthreads[i], &error_check), \
+        delete_all_resources(pthreads, philosophers); exit(EXIT_FAILURE));
+
+        CHCK_THR_FAIL(error_check, delete_all_resources(pthreads, philosophers); exit(EXIT_FAILURE));
     }
 
     for (int i = 0; i < NUMBER_OF_PHILOSOPHERS; i++)
     {
-        CHCK_FUNC(pthread_join (philosophers[i], NULL), \
-        destroy_semaphores(); return EXIT_FAILURE);
+        printf ("[Phil] - %d : eated - %d.\n", i, philosophers[i].eated);
     }
 
-    destroy_semaphores();
+    delete_all_resources(pthreads, philosophers);
     return EXIT_SUCCESS;
 }
 
-// void* philosopher_base(void *num)
-// {
-//     int id;
-//     int left_fork, right_fork, food_left;
-//     id = (int)num;
-//     printf ("Philosopher %d sitting down to dinner.\n", id);
-//     right_fork = id;
-//     left_fork = id + 1;
-//     /* Wrap around the forks. */
-//     if (left_fork == NUMBER_OF_PHILOSOPHERS)
-//         left_fork = 0;
 
-//     while (food_left = food_on_table ()) {
-//         /* Thanks to philosophers #1 who would like to 
-//             * take a nap before picking up the forks, the other
-//             * philosophers may be able to eat their dishes and 
-//             * not deadlock.
-//             */
-//         if (id == 1)
-//             sleep (sleep_seconds);
-
-//         printf ("Philosopher %d: get dish %d.\n", id, food_left);
-//         get_fork (id, right_fork, "right");
-//         get_fork (id, left_fork, "left ");
-
-//         printf ("Philosopher %d: eating.\n", id);
-//         usleep (DELAY * (FOOD - food_left + 1));
-//         down_forks (left_fork, right_fork);
-//     }
-//     printf ("Philosopher %d is done eating.\n", id);
-//     return (NULL);
-// }
-
-// int food_on_table_base()
-// {
-//     static int food = FOOD;
-//     int myfood;
-//     pthread_mutex_lock (&foodlock);
-//     if (food > 0) {
-//         food--;
-//     }
-//     myfood = food;
-//     pthread_mutex_unlock (&foodlock);
-//     return myfood;
-// }
-
-// void get_fork_base(int phil, int fork, char *hand)
-// {
-//     pthread_mutex_lock (&forks[fork]);
-//     printf ("Philosopher %d: got %s fork %d\n", phil, hand, fork);
-// }
-
-// void down_forks_base(int f1, int f2)
-// {
-//     pthread_mutex_unlock (&forks[f1]);
-//     pthread_mutex_unlock (&forks[f2]);
-// }
-
-
-void* philosopher(void* argv)
+void* philosopher_action(void* argv)
 {
     CHCK_NULL(argv, return (void*)EXIT_FAILURE);
-	const int MY_ID = (const int) argv;
+	philosopher_data* const philosopher = (philosopher_data* const) argv;
     
-    printf ("Philosopher %d sitting down to dinner.\n", MY_ID);
+    printf ("[Phil] - %d : sitting down to dinner.\n", philosopher->id);
 
-    int left_philosopher = left(MY_ID);
-    int right_philosopher = right(MY_ID);
 
-    while (can_eat()) 
+    while (can_eat(&(philosopher->eated))) 
     {
-        printf ("Philosopher %d: is thinking\n", MY_ID);
-        think();
+        think(philosopher->id);
 
-        printf ("Philosopher %d: is trying to take forks\n", MY_ID);
-        take_forks(MY_ID);
+        take_forks(philosopher->id);
         
-        printf ("Philosopher %d: is eating\n", MY_ID);
-        eat();
+        eat(philosopher->id);
         
-        printf ("Philosopher %d: is putting forks\n", MY_ID);
-        put_forks(MY_ID);
+        put_forks(philosopher->id);
     }
-    printf ("Philosopher %d is done eating.\n", MY_ID);
+    printf ("[Phil] - %d : is done eating.\n", philosopher->id);
     return (NULL);
 }
 
-void think(void);
-void take_forks(int id);
-void eat(void);
-void put_forks(int id);
-void check_forks(int id);
-
-bool can_eat() 
+bool can_eat(int* eated_value) 
 {
-    return true;
+    static int food = AMOUNT_OF_FOOD;
+    pthread_mutex_lock (&food_mutex);
+    bool expression = food > 0;
+    if (expression) 
+    {
+        --food;
+        ++(*eated_value);
+    }
+    pthread_mutex_unlock (&food_mutex);
+    return expression;
+}
+
+void think(int id)
+{
+    printf ("[Phil] - %d : is thinking\n", id);
+    usleep(THINKING_TIME);
+}
+
+void take_forks(int id)
+{
+    pthread_mutex_lock(&states_mutex);
+
+    states[id] = HUNGRY;
+
+    check_forks(id);
+
+    pthread_mutex_unlock(&states_mutex);
+
+    printf ("[Phil] - %d : is trying to take forks\n", id);
+    
+    sem_wait(&semaphores[id]);
+}
+
+void eat(int id)
+{
+    printf ("[Phil] - %d : is eating\n", id);
+    usleep(EATING_TIME); 
+}
+
+void put_forks(int id) 
+{
+    printf ("[Phil] - %d : is putting forks\n", id);
+
+    pthread_mutex_lock(&states_mutex);
+
+    states[id] = THINKING;
+
+    check_forks(left(id));
+    check_forks(right(id));
+
+    pthread_mutex_unlock(&states_mutex);
+}
+void check_forks(int id)
+{
+    int left_one = left(id);
+    int right_one = right(id);
+    if (states[id] == HUNGRY && states[left_one] != EATING && states[right_one] != EATING) 
+    {
+        states[id] = EATING;
+        sem_post(&semaphores[id]);
+    }
 }
 
 int left(int id)
@@ -167,10 +193,65 @@ int right(int id)
     return (id + 1) % NUMBER_OF_PHILOSOPHERS;
 }
 
-void destroy_semaphores()
+
+int memory_allocation(pthread_t** pthreads, philosopher_data** philosophers)
 {
+    *pthreads = calloc(NUMBER_OF_PHILOSOPHERS, sizeof(pthread_t));
+    CHCK_NULL(*pthreads, return EXIT_FAILURE);
+
+    *philosophers = calloc(NUMBER_OF_PHILOSOPHERS, sizeof(philosopher_data));
+    CHCK_NULL(*philosophers, free(*pthreads); return EXIT_FAILURE);
+
+    semaphores = calloc(NUMBER_OF_PHILOSOPHERS, sizeof(sem_t));
+    CHCK_NULL(semaphores, free(*pthreads); free(*philosophers); return EXIT_FAILURE);
+
+    states = calloc(NUMBER_OF_PHILOSOPHERS, sizeof(int));
+    CHCK_NULL(states, free(*pthreads); free(*philosophers); free(semaphores); return EXIT_FAILURE);
+
+    return EXIT_SUCCESS;
+}
+
+int init_resources()
+{
+    CHCK_FUNC(pthread_mutex_init(&states_mutex, NULL), return EXIT_FAILURE);
+    CHCK_FUNC(pthread_mutex_init(&food_mutex, NULL), pthread_mutex_destroy(&states_mutex); return EXIT_FAILURE);
+
+    for (int i = 0; i < NUMBER_OF_PHILOSOPHERS; ++i)
+    {
+        CHCK_FUNC(sem_init(&semaphores[i], 0, 0), return EXIT_FAILURE);
+    }
+    return EXIT_SUCCESS;
+}
+
+void fill_philosopher_info(philosopher_data* philosophers)
+{
+    for (int i = 0; i < NUMBER_OF_PHILOSOPHERS; ++i)
+    {
+        philosophers[i].id = i;
+        philosophers[i].eated = 0;
+    }
+}
+
+void delete_all_resources(pthread_t* pthreads, philosopher_data* philosophers)
+{
+    destroy_sync_obj();
+    free_resources(pthreads, philosophers);
+}
+
+void destroy_sync_obj()
+{
+    pthread_mutex_destroy(&states_mutex);
+    pthread_mutex_destroy(&food_mutex);
     for (int i = 0; i < NUMBER_OF_PHILOSOPHERS; ++i)
     {
         sem_destroy(&semaphores[i]);
     }
+}
+
+void free_resources(pthread_t* pthreads, philosopher_data* philosophers)
+{
+    free(pthreads);
+    free(philosophers);
+    free(semaphores);
+    free(states);
 }

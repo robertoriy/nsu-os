@@ -7,7 +7,7 @@
             } \
         } while (0)
 
-#define CHCK_THR_ARGS(return_value, action_on_error) do \
+#define CHCK_THR_FAIL(return_value, action_on_error) do \
         { \
             if ((void*)EXIT_FAILURE == return_value) { \
                 fprintf(stderr, "Runtime error: Thread have got wrong arguments. Error at %s:%d\n", __FILE__, __LINE__); \
