@@ -79,7 +79,6 @@ void* sorter_routine(void* argv)
         printf("\nThe list has been sorted.\n\n");
         CHCK_SYNC_OBJ(pthread_mutex_unlock(&list_mutex));
     }
-
 	return NULL;
 }
 
@@ -107,9 +106,7 @@ void sort_list(node* head)
     }
     node *left = head;
     node *right = head->next;
-
-    node *temp = (node *)malloc(sizeof(node));
-    temp->data = (char *)calloc(MAX_STRING_LENGTH + 1, sizeof(char));
+    char* temp = (char *)calloc(MAX_STRING_LENGTH + 1, sizeof(char));
     
     while (NULL != left->next)
     {
@@ -117,16 +114,15 @@ void sort_list(node* head)
         {
             if (strncmp(left->data, right->data, MAX_STRING_LENGTH) > 0)
             {
-                strncpy(temp->data, left->data, MAX_STRING_LENGTH);
+                strncpy(temp, left->data, MAX_STRING_LENGTH);
                 strncpy(left->data, right->data, MAX_STRING_LENGTH);
-                strncpy(right->data, temp->data, MAX_STRING_LENGTH);
+                strncpy(right->data, temp, MAX_STRING_LENGTH);
             }
             right = right->next;
         }
         left = left->next;
         right = left->next;
     }
-    free(temp->data);
     free(temp);
 }
 
